@@ -1,5 +1,6 @@
 function request({ url, method = 'GET', data = {}, header = {} }) {
   const token = wx.getStorageSync('sessionToken') || ''
+  const authorization = token ? (token.indexOf('Bearer ') === 0 ? token : `Bearer ${token}`) : ''
   return new Promise((resolve, reject) => {
     wx.request({
       url,
@@ -7,19 +8,14 @@ function request({ url, method = 'GET', data = {}, header = {} }) {
       data,
       header: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        ...(authorization ? { Authorization: authorization } : {}),
         ...header
       },
       success(res) {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(res.data)
-        } else {
-          reject(res.data || { message: 'request failed' })
-        }
+        if (res.statusCode >= 200 && res.statusCode < 300) resolve(res.data)
+        else reject(res.data || { message: 'request failed' })
       },
-      fail(err) {
-        reject(err)
-      }
+      fail: reject
     })
   })
 }

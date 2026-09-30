@@ -4,5 +4,7 @@
     <text class="org">单位：{{orgName}}</text>
   </view>
 
-  <button class="btn" bindtap="goCapture">拍照上传</button>
+  <button class="btn" loading="{{loading}}" disabled="{{loading}}" bindtap="onGetUserProfile">
+    微信登录并进入拍照
+  </button>
 </view>

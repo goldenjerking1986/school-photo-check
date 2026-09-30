@@ -2,21 +2,13 @@ const { request } = require('../../utils/request')
 
 Page({
   data: {
-    taskId: '',
-    orgId: '',
-    orgName: '某学院',
-    tempImagePath: '',
-    watermarkedPath: '',
-    captureTime: '',
-    locationText: '',
-    ready: false
+    taskId: '', orgId: '', orgName: '某学院', tempImagePath: '',
+    watermarkedPath: '', captureTime: '', locationText: '', ready: false
   },
 
   onLoad(options) {
-    const taskId = options.taskId || ''
-    const orgId = options.orgId || ''
     const orgName = options.orgName ? decodeURIComponent(options.orgName) : wx.getStorageSync('orgName') || '某学院'
-    this.setData({ taskId, orgId, orgName, ready: true })
+    this.setData({ taskId: options.taskId || '', orgId: options.orgId || '', orgName, ready: true })
   },
 
   takePhoto() {
@@ -24,152 +16,84 @@ Page({
     ctx.takePhoto({
       quality: 'high',
       success: (res) => {
-        const imagePath = res.tempImagePath
-        this.setData({ tempImagePath: imagePath })
-        this.getLocationAndGenerateWatermark(imagePath)
+        this.setData({ tempImagePath: res.tempImagePath })
+        this.getLocationAndGenerateWatermark(res.tempImagePath)
       },
-      fail: () => {
-        wx.showToast({ title: '拍照失败', icon: 'none' })
-      }
+      fail: () => wx.showToast({ title: '拍照失败', icon: 'none' })
     })
   },
 
   getLocationAndGenerateWatermark(imagePath) {
     wx.showLoading({ title: '定位与生成水印中...' })
-
     wx.getLocation({
       type: 'gcj02',
       success: (loc) => {
-        const lat = loc.latitude
-        const lon = loc.longitude
-        const ts = new Date()
-        const captureTime = ts.toISOString().replace('T', ' ').split('.')[0]
-        this.setData({ captureTime, locationText: `${lat.toFixed(5)}, ${lon.toFixed(5)}` })
-
-        const watermarkText = `${this.data.orgName} | ${captureTime} | ${this.data.locationText}`
-
-        this.drawWatermark(imagePath, watermarkText, (watermarkedPath) => {
-          this.setData({ watermarkedPath: watermarkedPath })
-          this.uploadPhoto(watermarkedPath, captureTime, lat, lon)
+        const captureTime = new Date().toISOString().replace('T', ' ').split('.')[0]
+        const locationText = `${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)}`
+        this.setData({ captureTime, locationText })
+        this.drawWatermark(imagePath, `${this.data.orgName} | ${captureTime} | ${locationText}`, (path) => {
+          this.setData({ watermarkedPath: path })
+          this.uploadPhoto(path, captureTime, loc.latitude, loc.longitude)
         })
       },
       fail: () => {
         wx.hideLoading()
-        wx.showModal({
-          title: '定位失败',
-          content: '获取位置信息失败，请允许定位后再上传。',
-          showCancel: false
-        })
+        wx.showModal({ title: '定位失败', content: '请允许微信使用位置后再上传。', showCancel: false })
       }
     })
   },
 
-  drawWatermark(imagePath, watermarkText, callback) {
+  drawWatermark(imagePath, text, callback) {
     wx.getImageInfo({
       src: imagePath,
       success: (info) => {
-        const width = info.width
-        const height = info.height
-        const canvasId = 'waterCanvas'
-        const ctx = wx.createCanvasContext(canvasId, this)
-
+        const ctx = wx.createCanvasContext('waterCanvas', this)
+        const { width, height } = info
         ctx.drawImage(imagePath, 0, 0, width, height)
-
-        const barHeight = Math.round(Math.max(60, height * 0.06))
-        ctx.setFillStyle('rgba(0,0,0,0.42)')
+        const barHeight = Math.max(80, Math.round(height * 0.08))
+        ctx.setFillStyle('rgba(0,0,0,0.45)')
         ctx.fillRect(0, height - barHeight, width, barHeight)
-
-        const fontSize = Math.round(Math.max(28, width * 0.03))
-        ctx.setFontSize(fontSize)
-        ctx.setFillStyle('#ffffff')
-        ctx.setTextAlign('left')
-
-        const padding = 20
-        const approxChars = Math.floor((width - 2 * padding) / (fontSize * 0.6))
-        const lines = []
-        let text = watermarkText
-        while (text.length > approxChars) {
-          lines.push(text.slice(0, approxChars))
-          text = text.slice(approxChars)
-        }
-        if (text.length) lines.push(text)
-
-        lines.forEach((ln, idx) => {
-          const y = height - barHeight + padding + (idx + 1) * (fontSize + 4)
-          ctx.fillText(ln, padding, y)
-        })
-
-        ctx.setFontSize(Math.round(fontSize * 0.9))
-        ctx.fillText('教学场所检查', width - 220, height - barHeight + padding + 20)
-
-        ctx.draw(false, () => {
-          wx.canvasToTempFilePath({
-            canvasId,
-            x: 0,
-            y: 0,
-            width,
-            height,
-            destWidth: width,
-            destHeight: height,
-            success: (res) => {
-              callback(res.tempFilePath)
-            },
-            fail: (err) => {
-              wx.hideLoading()
-              wx.showToast({ title: '水印生成失败', icon: 'none' })
-              console.error('canvasToTempFilePath fail', err)
-            }
-          }, this)
-        })
+        ctx.setFillStyle('#fff')
+        ctx.setFontSize(Math.max(26, Math.round(width * 0.03)))
+        ctx.fillText(text, 20, height - 28)
+        ctx.draw(false, () => wx.canvasToTempFilePath({
+          canvasId: 'waterCanvas', x: 0, y: 0, width, height,
+          destWidth: width, destHeight: height,
+          success: (result) => callback(result.tempFilePath),
+          fail: () => { wx.hideLoading(); wx.showToast({ title: '水印生成失败', icon: 'none' }) }
+        }, this))
       },
-      fail: (err) => {
-        wx.hideLoading()
-        wx.showToast({ title: '读取图片信息失败', icon: 'none' })
-        console.error('getImageInfo fail', err)
-      }
+      fail: () => { wx.hideLoading(); wx.showToast({ title: '图片读取失败', icon: 'none' }) }
     })
   },
 
-  uploadPhoto(filePath, captureTime, lat, lon) {
-    const uploadUrl = 'https://api.yourdomain.com/upload/photo'
+  uploadPhoto(filePath, captureTime, latitude, longitude) {
+    const token = wx.getStorageSync('sessionToken') || ''
+    if (!token) {
+      wx.hideLoading()
+      wx.showModal({ title: '请先登录', content: '登录后才能上传照片。', showCancel: false })
+      return
+    }
 
     wx.uploadFile({
-      url: uploadUrl,
+      url: 'https://api.yourdomain.com/upload/photo',
       filePath,
       name: 'file',
       formData: {
-        taskId: this.data.taskId,
-        orgId: this.data.orgId,
-        captureTime,
-        latitude: lat,
-        longitude: lon,
-        locationText: this.data.locationText,
-        orgName: this.data.orgName
+        taskId: this.data.taskId, orgId: this.data.orgId, captureTime,
+        latitude, longitude, locationText: this.data.locationText, orgName: this.data.orgName
       },
-      header: {
-        Authorization: `Bearer ${wx.getStorageSync('sessionToken')}`
-      },
+      header: { Authorization: `Bearer ${token}` },
       success: (res) => {
         wx.hideLoading()
-        try {
-          const data = JSON.parse(res.data)
-          if (data.success) {
-            wx.showToast({ title: '上传成功' })
-            setTimeout(() => {
-              wx.navigateBack()
-            }, 800)
-          } else {
-            wx.showToast({ title: data.message || '上传失败', icon: 'none' })
-          }
-        } catch (e) {
-          wx.showToast({ title: '上传返回解析失败', icon: 'none' })
-        }
+        let result
+        try { result = JSON.parse(res.data) } catch (e) { result = null }
+        if (result && result.success) {
+          wx.showToast({ title: '上传成功' })
+          setTimeout(() => wx.navigateBack(), 800)
+        } else wx.showToast({ title: (result && result.message) || '上传失败', icon: 'none' })
       },
-      fail: (err) => {
-        wx.hideLoading()
-        wx.showToast({ title: '网络异常，请重试', icon: 'none' })
-        console.error('uploadFile fail', err)
-      }
+      fail: () => { wx.hideLoading(); wx.showToast({ title: '网络异常，请重试', icon: 'none' }) }
     })
   }
 })
