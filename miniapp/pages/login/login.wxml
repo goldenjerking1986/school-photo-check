@@ -1,0 +1,8 @@
+<view class="container">
+  <view class="header">
+    <text class="title">教学场所检查</text>
+    <text class="org">单位：{{orgName}}</text>
+  </view>
+
+  <button class="btn" bindtap="goCapture">拍照上传</button>
+</view>

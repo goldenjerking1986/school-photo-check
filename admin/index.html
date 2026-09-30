@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>教学场所检查后台</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <h1>教学场所检查后台</h1>
+    </header>
+
+    <section class="filters">
+      <label>
+        组织ID:
+        <input id="orgId" type="number" value="1" />
+      </label>
+      <label>
+        任务ID:
+        <input id="taskId" type="number" value="1" />
+      </label>
+      <label>
+        日期:
+        <input id="date" type="date" />
+      </label>
+      <button id="searchBtn">查询</button>
+    </section>
+
+    <section class="summary" id="summaryBox">
+      共 0 张照片
+    </section>
+
+    <section class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>图片</th>
+            <th>时间</th>
+            <th>地点</th>
+            <th>单位</th>
+            <th>状态</th>
+            <th>链接</th>
+          </tr>
+        </thead>
+        <tbody id="photoTable"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

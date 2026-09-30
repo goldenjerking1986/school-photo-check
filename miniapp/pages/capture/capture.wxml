@@ -1,0 +1,13 @@
+<view class="container">
+  <camera device-position="back" style="width:100%; height:60vh;" class="camera"></camera>
+
+  <view class="info">
+    <text>单位：{{orgName}}</text>
+    <text>时间：{{captureTime || '未拍照'}}</text>
+    <text>地点：{{locationText || '未定位'}}</text>
+  </view>
+
+  <button class="btn" bindtap="takePhoto">拍照上传</button>
+
+  <canvas canvas-id="waterCanvas" style="width:100%; height:1000rpx; display:none;"></canvas>
+</view>
