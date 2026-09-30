@@ -60,3 +60,9 @@ CREATE TABLE IF NOT EXISTS folders (
   folder_name VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+INSERT INTO organizations (id, name, code) VALUES (1, '某学院', 'ORG-001')
+ON DUPLICATE KEY UPDATE name = VALUES(name), code = VALUES(code);
+
+INSERT INTO tasks (id, org_id, name, task_date, status) VALUES (1, 1, '2026秋季教学场所检查', '2026-09-30', 'active')
+ON DUPLICATE KEY UPDATE name = VALUES(name), task_date = VALUES(task_date), status = VALUES(status);

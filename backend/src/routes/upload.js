@@ -11,7 +11,15 @@ const tmpDir = path.join(process.cwd(), 'tmp', 'uploads')
 fs.mkdirSync(tmpDir, { recursive: true })
 const upload = multer({ dest: tmpDir, limits: { fileSize: 10 * 1024 * 1024 } })
 
-router.post('/photo', upload.single('file'), async (req, res) => {
+function authRequired(req, res, next) {
+  const auth = req.headers.authorization || ''
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: '未授权' })
+  }
+  next()
+}
+
+router.post('/photo', authRequired, upload.single('file'), async (req, res) => {
   try {
     const file = req.file
     if (!file) {

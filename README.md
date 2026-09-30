@@ -1,151 +1,66 @@
-# 教学场所检查照片上传 - 完整代码包 (微信小程序 + 后端 + 管理后台)
+# 教学场所检查照片上传 - 生产增强版说明
 
-这个仓库包含一个可运行的最小可用产品（MVP）实现：
-- 微信小程序：拍照、读取地理位置、弹入水印（时间、地点、单位）、上传照片
-- 后端：接收照片、上传对象存储、保存元数据、提供查询接口
-- 管理后台：浏览、筛选、查看、下载照片列表
-- MySQL 建表脚本：用来维护任务、照片、组织和日志信息
+本增强版在最小可用 MVP 基础上补齐了以下关键能力：
 
-## 目录结构
+- 更稳的鉴权：登录返回 token，后台请求校验 Bearer token
+- 后台查询增强：支持 summary、过滤和按任务/日期统计
+- 管理端登录面板：说明 token 登录方式，便于快速演示
+- SQL 初始化补充：插入示例组织和任务，便于第一批测试
+
+## 关键修改点
+
+1. `backend/src/routes/auth.js`
+   - 新增 `buildMockToken` / `parseToken`
+   - 新增 `/profile` 端点，方便后台验证登录状态
+
+2. `backend/src/routes/photos.js`
+   - 增强了 `GET /photos` 和 `GET /photos/summary`
+   - 增加了 `authRequired` middleware
+
+3. `backend/src/routes/upload.js`
+   - 上传接口要求 Bearer token，确保只有登录用户才能上传
+
+4. `admin/index.html` / `admin/app.js` / `admin/styles.css`
+   - 新增登录面板和总览卡片
+   - 支持总览统计和列表查询
+
+5. `backend/sql/schema.sql`
+   - 增加示例组织和任务数据，方便测试
+
+## 登录方式
+
+演示中，后台管理页可以手动输入：
 
 ```text
-school-photo-check/
-├─ miniapp/                       # 微信小程序
-│  ├─ app.js
-│  ├─ app.json
-│  ├─ app.wxss
-│  ├─ project.config.json
-│  ├─ pages/
-│  │  ├─ login/
-│  │  │  ├─ login.js
-│  │  │  ├─ login.wxml
-│  │  │  └─ login.wxss
-│  │  └─ capture/
-│  │     ├─ capture.js
-│  │     ├─ capture.wxml
-│  │     └─ capture.wxss
-│  └─ utils/
-│     └─ request.js
-├─ backend/
-│  ├─ package.json
-│  ├─ .gitignore
-│  ├─ server.js
-│  ├─ src/
-│  │  ├─ config.js
-│  │  ├─ db.js
-│  │  ├─ routes/
-│  │  │  ├─ auth.js
-│  │  │  ├─ upload.js
-│  │  │  └─ photos.js
-│  │  ├─ services/
-│  │  │  ├─ folder.js
-│  │  │  └─ oss.js
-│  │  └─ utils/
-│  │     └─ logger.js
-│  └─ sql/
-│     └─ schema.sql
-├─ admin/
-│  ├─ index.html
-│  ├─ app.js
-│  └─ styles.css
-├─ docs/
-│  └─ qr-code-generation.md
-└─ README.md
+Bearer <token>
 ```
 
-## 关键功能
-- 微信扫一扫打开小程序
-- 拍照上传校验照片
-- 自动获取地理位置
-- 图片烧入时间 + 地点 + 单位水印
-- 后端给照片生成归档目录
-- 管理后台可以查看照片列表、按日期/地点/任务筛选
-- 数据库记录上传日志和 MD5
+在微信 login 接口返回结果中，token 即为后台登录所需凭据；生产环境建议换成 JWT + 密钥加密。
 
-## 快速开始
+## 接下来可继续做
 
-### 1）安装后端依赖
+- 加入真实 JWT / Redis session
+- 增加图片审核接口：review/reject
+- 增加 Excel 导出
+- 增加地图可视化（按地点聚集）
+- 加入分权限：管理员、审核员、老师
+
+## 运行方式
 
 ```bash
 cd backend
 npm install
-```
-
-### 2）准备数据库
-
-在 MySQL 中创建数据库并执行：
-
-```bash
-mysql -u root -p < backend/sql/schema.sql
-```
-
-### 3）配置环境变量/参数
-
-修改 `backend/src/config.js`，填入：
-- 数据库配置
-- 微信小程序 AppID/Secret
-- COS（或 OSS）参数
-
-### 4）启动后端
-
-```bash
-cd backend
 npm run dev
 ```
 
-### 5）启动管理后台
-
-使用一个静态文件服务器即可，例如：
-
-```bash
-cd admin
-python3 -m http.server 8080
-```
-
-随后访问：
-- http://localhost:8080
-
-### 6）启动微信小程序
-
-在微信开发者工具中打开 `miniapp/` 目录。
-
-请替换：
-- `miniapp/app.js` 中的后端请求地址 `https://api.yourdomain.com`
-- `miniapp/pages/capture/capture.js` 中的上传地址 `https://api.yourdomain.com/upload/photo`
-
-## 管理后台功能
-
-后台支持：
-- 查看照片列表
-- 按 orgId / taskId / date 过滤
-- 显示文件 URL、拍摄时间、地点、状态
-- 导出/查看图片链接
-
-## 后端说明
-
-后端接口：
-- `POST /auth/login`：微信 code -> openid/token
-- `POST /upload/photo`：上传图片并保存到 COS
-- `GET /photos`：查询照片列表
-- `GET /health`：健康检查
-
-## 生产注意事项
-- 使用 HTTPS
-- 加强 JWT / session 校验
-- 保护 COS Secret Key
-- 对上传照片做格式、大小和内容校验
-- 在后台增加审核与下载权限控制
-
-## 扫码场景
-
-建议二维码内容放任务参数：
+然后打开：
 
 ```text
-https://yourdomain.com/scan?orgId=1&taskId=15&orgName=%E6%9F%90%E5%A4%A7%E5%AD%A6
+http://localhost:8080
 ```
 
-然后在微信小程序 or H5 页面中解析参数并跳转到拍照页。
-
-## 许可证
-
-MIT
+如果你想继续，我下一步可以直接给你：
+- 真实 JWT 版鉴权代码
+- 审核端/审核状态接口
+- Excel 导出组件
+- 组织/角色和任务管理后台

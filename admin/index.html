@@ -10,44 +10,55 @@
   <div class="container">
     <header class="topbar">
       <h1>教学场所检查后台</h1>
+      <button id="logoutBtn" class="logout">退出</button>
     </header>
 
-    <section class="filters">
-      <label>
-        组织ID:
-        <input id="orgId" type="number" value="1" />
-      </label>
-      <label>
-        任务ID:
-        <input id="taskId" type="number" value="1" />
-      </label>
-      <label>
-        日期:
-        <input id="date" type="date" />
-      </label>
-      <button id="searchBtn">查询</button>
-    </section>
+    <div id="loginPanel" class="login-panel">
+      <h2>管理员登录</h2>
+      <input id="loginToken" type="text" placeholder="请输入 Bearer token" />
+      <button id="loginBtn">登录</button>
+    </div>
 
-    <section class="summary" id="summaryBox">
-      共 0 张照片
-    </section>
+    <div id="appPanel" class="hidden">
+      <section class="filters">
+        <label>
+          组织ID:
+          <input id="orgId" type="number" value="1" />
+        </label>
+        <label>
+          任务ID:
+          <input id="taskId" type="number" value="1" />
+        </label>
+        <label>
+          日期:
+          <input id="date" type="date" />
+        </label>
+        <button id="searchBtn">查询</button>
+      </section>
 
-    <section class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>图片</th>
-            <th>时间</th>
-            <th>地点</th>
-            <th>单位</th>
-            <th>状态</th>
-            <th>链接</th>
-          </tr>
-        </thead>
-        <tbody id="photoTable"></tbody>
-      </table>
-    </section>
+      <section class="summary" id="summaryBox">
+        共 0 张照片
+      </section>
+
+      <section class="cards" id="statsCards"></section>
+
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>图片</th>
+              <th>时间</th>
+              <th>地点</th>
+              <th>单位</th>
+              <th>状态</th>
+              <th>链接</th>
+            </tr>
+          </thead>
+          <tbody id="photoTable"></tbody>
+        </table>
+      </section>
+    </div>
   </div>
 
   <script src="app.js"></script>
