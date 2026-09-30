@@ -2,15 +2,17 @@ const express = require('express')
 const axios = require('axios')
 const QRCode = require('qrcode')
 const { requireAuth } = require('../auth')
+const { uploadBuffer } = require('../services/oss')
 
 const router = express.Router()
 
 // POST /api/qr/generate
-// body: { type: 'url'|'miniapp', url, scene, page, width }
+// body: { type: 'url'|'miniapp', url, scene, page, width, upload(boolean), storagePath(optional), taskId(optional) }
 router.post('/generate', requireAuth, async (req, res) => {
   try {
     const { type } = req.body
     const width = parseInt(req.body.width || '430', 10)
+    const shouldUpload = !!req.body.upload
 
     if (type === 'miniapp') {
       const APPID = process.env.WX_APPID
@@ -43,6 +45,17 @@ router.post('/generate', requireAuth, async (req, res) => {
       }
 
       const buffer = Buffer.from(qrResp.data)
+
+      if (shouldUpload) {
+        // build target key
+        const orgId = req.user && req.user.orgId ? req.user.orgId : 'unknown'
+        const taskId = req.body.taskId || 'unknown'
+        const filename = `miniapp_${Date.now()}.png`
+        const targetKey = req.body.storagePath || `qr/org_${orgId}/task_${taskId}/${filename}`
+        const result = await uploadBuffer(buffer, targetKey)
+        return res.json({ success: true, url: result.url })
+      }
+
       res.setHeader('Content-Type', 'image/png')
       res.setHeader('Content-Disposition', 'inline; filename="miniapp-qrcode.png"')
       return res.send(buffer)
@@ -54,6 +67,16 @@ router.post('/generate', requireAuth, async (req, res) => {
       // generate QR PNG buffer
       const opts = { errorCorrectionLevel: 'H', type: 'png', width }
       const buffer = await QRCode.toBuffer(url, opts)
+
+      if (shouldUpload) {
+        const orgId = req.user && req.user.orgId ? req.user.orgId : 'unknown'
+        const taskId = req.body.taskId || 'unknown'
+        const filename = `urlqr_${Date.now()}.png`
+        const targetKey = req.body.storagePath || `qr/org_${orgId}/task_${taskId}/${filename}`
+        const result = await uploadBuffer(buffer, targetKey)
+        return res.json({ success: true, url: result.url })
+      }
+
       res.setHeader('Content-Type', 'image/png')
       res.setHeader('Content-Disposition', 'inline; filename="qr.png"')
       return res.send(buffer)
