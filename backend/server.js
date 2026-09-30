@@ -5,21 +5,24 @@ const path = require('path')
 const authRoutes = require('./src/routes/auth')
 const uploadRoutes = require('./src/routes/upload')
 const photosRoutes = require('./src/routes/photos')
+const reviewRoutes = require('./src/routes/review')
+const exportRoutes = require('./src/routes/export')
 const config = require('./src/config')
 
 const app = express()
 
 app.use(cors())
-app.use(bodyParser.json({ limit: '10mb' }))
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }))
+app.use(bodyParser.json({ limit: '20mb' }))
+app.use(bodyParser.urlencoded({ extended: true, limit: '20mb' }))
 
-// 静态网站：管理后台入口
 const adminDir = path.join(__dirname, '..', 'admin')
 app.use(express.static(adminDir))
 
 app.use('/auth', authRoutes)
 app.use('/upload', uploadRoutes)
 app.use('/photos', photosRoutes)
+app.use('/review', reviewRoutes)
+app.use('/export', exportRoutes)
 
 app.get('/health', (req, res) => {
   res.json({ success: true, message: 'ok' })
